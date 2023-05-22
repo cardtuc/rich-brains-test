@@ -19,8 +19,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import makeStyles from '@mui/styles/makeStyles';
 import AddIcon from '@mui/icons-material/Add';
 
-import { clients, getUser, setClients } from '@APP/redux';
-import { Dropdown, ToggleButton, SnackbarAlert } from '@APP/components';
+import { clients, getUser, setClients, hideLoader, showLoader, showSnackbar } from '@APP/redux';
+import { Dropdown, ToggleButton } from '@APP/components';
 import { getClients } from '@APP/services/api';
 
 import Client from './Client';
@@ -55,21 +55,27 @@ const Clients = () => {
   const [sortedBy, setSortedBy] = useState('name');
   const [searchedValue, setSearchedValue] = useState('');
   const [isModalWindowOpen, setIsModalWindowOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const theme = useTheme();
   const isDisplayLessMd = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     (async () => {
       try {
+        dispatch(showLoader());
+
         const { clients } = await getClients();
         setSortedClients(clients);
 
         dispatch(setClients(clients));
       } catch (e) {
-        setSnackbarMessage('Something went wrong!');
-        setSnackbarSeverity('error');
+        dispatch(
+          showSnackbar({
+            severity: 'error',
+            message: 'Something went wrong!'
+          })
+        );
+      } finally {
+        dispatch(hideLoader());
       }
     })();
   }, []);
@@ -143,12 +149,6 @@ const Clients = () => {
 
   return (
     <>
-      <SnackbarAlert
-        severity={snackbarSeverity}
-        open={!!snackbarMessage}
-        handleClose={() => setSnackbarMessage('')}
-        message={snackbarMessage}
-      />
       <CreateEditClientModalContent
         handleClose={() => setIsModalWindowOpen(false)}
         isOpen={isModalWindowOpen}

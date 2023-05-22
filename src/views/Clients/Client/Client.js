@@ -4,8 +4,8 @@ import { Box, Card, CardContent, CardMedia, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 
-import { getUser, setSelectedClient } from '@APP/redux';
-import { InfoClient, SnackbarAlert } from '@APP/components';
+import { getUser, setSelectedClient, hideLoader, showLoader, showSnackbar } from '@APP/redux';
+import { InfoClient } from '@APP/components';
 import { getClient } from '@APP/services/api';
 import avatar from '@APP/assets/images/avatar.svg';
 
@@ -16,8 +16,6 @@ import CreateEditClientModalContent from '../CreateEditClientModalContent';
 const Client = ({ client }) => {
   const [isHover, setIsHover] = useState(false);
   const [isInfoClientModalWindowOpen, setIsInfoClientModalWindowOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const dispatch = useDispatch();
   const user = useSelector(getUser);
 
@@ -25,24 +23,25 @@ const Client = ({ client }) => {
     if (!user) return null;
 
     try {
+      dispatch(showLoader());
       const response = await getClient(client.id);
       dispatch(setSelectedClient(response.client));
 
       setIsInfoClientModalWindowOpen(true);
     } catch (e) {
-      setSnackbarSeverity('error');
-      setSnackbarMessage('Something went wrong!');
+      dispatch(
+        showSnackbar({
+          severity: 'error',
+          message: 'Something went wrong!'
+        })
+      );
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
   return (
     <>
-      <SnackbarAlert
-        severity={snackbarSeverity}
-        open={!!snackbarMessage}
-        handleClose={() => setSnackbarMessage('')}
-        message={snackbarMessage}
-      />
       <InfoClientModalContent
         isOpen={isInfoClientModalWindowOpen}
         handleClose={() => setIsInfoClientModalWindowOpen(false)}

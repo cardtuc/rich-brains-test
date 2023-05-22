@@ -19,9 +19,9 @@ import makeStyles from '@mui/styles/makeStyles';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import { DatePicker } from '@mui/x-date-pickers';
 
-import { ModalWindow, SnackbarAlert } from '@APP/components';
+import { ModalWindow } from '@APP/components';
 import { dateFormatForBE } from '@APP/constants';
-import { setClients, getUser } from '@APP/redux';
+import { getUser, hideLoader, setClients, showLoader, showSnackbar } from '@APP/redux';
 import { createClient, editClient, getClients } from '@APP/services/api';
 import avatar from '@APP/assets/images/avatar.svg';
 
@@ -49,8 +49,6 @@ const CreateEditClientModalContent = ({ handleClose, isOpen, title, client }) =>
   const dispatch = useDispatch();
   const classes = useStyles();
   const [isDeleteClientModalWindowOpen, setIsDeleteClientModalWindowOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const user = useSelector(getUser);
   const theme = useTheme();
   const isDisplayLessMd = useMediaQuery(theme.breakpoints.down('md'));
@@ -79,6 +77,8 @@ const CreateEditClientModalContent = ({ handleClose, isOpen, title, client }) =>
     validationSchema: createOrEditClientValidationSchema,
     onSubmit: async ({ name, surname, phone, age, dateOfBirth, country }) => {
       try {
+        dispatch(showLoader());
+
         if (client) {
           await editClient(
             client.id,
@@ -90,7 +90,12 @@ const CreateEditClientModalContent = ({ handleClose, isOpen, title, client }) =>
             country
           );
 
-          setSnackbarMessage('Client was edited successfully');
+          dispatch(
+            showSnackbar({
+              severity: 'success',
+              message: 'Client was edited successfully'
+            })
+          );
         } else {
           await createClient(
             name,
@@ -101,7 +106,12 @@ const CreateEditClientModalContent = ({ handleClose, isOpen, title, client }) =>
             country
           );
 
-          setSnackbarMessage('New client was added successfully');
+          dispatch(
+            showSnackbar({
+              severity: 'success',
+              message: 'New client was added successfully'
+            })
+          );
         }
 
         const updatedClients = await getClients();
@@ -109,22 +119,21 @@ const CreateEditClientModalContent = ({ handleClose, isOpen, title, client }) =>
 
         handleClose();
       } catch (error) {
-        setSnackbarMessage('Something went wrong!');
-        setSnackbarSeverity('error');
+        dispatch(
+          showSnackbar({
+            severity: 'error',
+            message: 'Something went wrong!'
+          })
+        );
       } finally {
         resetForm();
+        dispatch(hideLoader());
       }
     }
   });
 
   return (
     <>
-      <SnackbarAlert
-        open={!!snackbarMessage}
-        handleClose={() => setSnackbarMessage('')}
-        severity={snackbarSeverity}
-        message={snackbarMessage}
-      />
       <DeleteClientModalContent
         isOpen={isDeleteClientModalWindowOpen}
         clientId={client?.id}
